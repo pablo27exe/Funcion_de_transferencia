@@ -52,7 +52,7 @@ class AplicacionNeumatica:
         
         # ========== SECCIÓN SUPERIOR: INPUT ==========
         self.txt_funcion = ft.TextField(
-            label="Ingrese la función neumática",
+            label="Ingrese la función de transferencia",
             hint_text="Ejemplo: A+/B+/A-,B-",
             width=500,
             autofocus=True,
@@ -220,50 +220,63 @@ class AplicacionNeumatica:
     
     def _generar_diagrama(self):
         """Genera el diagrama completo"""
+        print("=== Botón Generar presionado ===")
         funcion = self.txt_funcion.value
+        print(f"Función: '{funcion}'")
         
         if not funcion:
+            print("Error: Función vacía")
             self._mostrar_alerta("Error", "Debe ingresar una función", ft.Icons.ERROR)
             return
         
+        # Validar función
+        print("Validando función...")
         es_valida, mensaje = ValidadorFuncion.validar(funcion)
+        print(f"¿Válida?: {es_valida}, Mensaje: {mensaje}")
         
         if not es_valida:
+            print("Mostrando alerta de error")
             self._mostrar_alerta("Error de Validación", mensaje, ft.Icons.ERROR)
             return
         
         try:
+            print("Interpretando función...")
             self.interprete = InterpreteFuncion(funcion)
+            print(f"Cilindros: {self.interprete.cilindros}")
+            print(f"Fases: {len(self.interprete.fases)}")
+            
+            print("Generando gráfico...")
             self.generador_grafico = GeneradorGrafico(self.interprete)
             self.generador_tabla = GeneradorTabla(self.interprete)
             
+            print("Actualizando gráfico...")
             self._actualizar_grafico()
+            
+            print("Actualizando tabla...")
             self._actualizar_tabla()
             
-            self.fase_actual = 0
-            self._actualizar_paso_a_paso()
+            print("Todo OK!")
+            print("Mostrando elementos visuales...")
             
-            self.btn_exportar_pdf.disabled = False
-            self.btn_exportar_png.disabled = False
-            
+            # Asegurar que los elementos son visibles
             self.imagen_grafico.visible = True
             self.tabla_estados.visible = True
             self.contenedor_paso_a_paso.visible = True
-            
-            for control in self.contenedor_resultado.controls:
-                if isinstance(control, ft.Text):
-                    control.visible = True
-            
+
+            # Actualizar los contenedores padres
+            contenedor_tabla_scroll = self.contenedor_resultado.controls[3].content
+            if contenedor_tabla_scroll:
+                contenedor_tabla_scroll.visible = True
+
+            # Forzar actualización de la página
             self.page.update()
-            
-            self._mostrar_alerta(
-                "Éxito", 
-                f"Diagrama generado correctamente\n{len(self.interprete.cilindros)} cilindros, {len(self.interprete.fases)} fases", 
-                ft.Icons.CHECK_CIRCLE,
-                ft.colors.GREEN
-            )
+
+            print("¡Diagrama visible!")
             
         except Exception as ex:
+            print(f"ERROR: {ex}")
+            import traceback
+            traceback.print_exc()
             self._mostrar_alerta("Error", f"Error al generar diagrama: {str(ex)}", ft.Icons.ERROR)
     
     def _actualizar_grafico(self, hasta_fase: int = None):
@@ -316,7 +329,7 @@ class AplicacionNeumatica:
                             ),
                             bgcolor=bgcolor,
                             padding=5,
-                            alignment=ft.alignment.center
+                            alignment=ft.Alignment(0, 0)
                         )
                     )
                 )
