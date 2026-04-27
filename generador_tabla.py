@@ -1,7 +1,7 @@
 """
 Generador de tabla de estados
 """
-from utils import obtener_nombre_estado, obtener_nombre_valvula
+from utils import obtener_nombre_estado
 
 
 class GeneradorTabla:
@@ -26,13 +26,13 @@ class GeneradorTabla:
             fila_cilindro = {'nombre': cilindro, 'valores': [], 'tipo': 'cilindro'}
             
             for fase_num in range(1, self.num_fases + 1):
-                estado = self.estados[cilindro][fase_num]  # True=SW, False=SH
+                estado = self.estados[cilindro][fase_num]  
                 esta_activo = cilindro in self.activos.get(fase_num, [])
                 
                 if estado:  # Extendido (SW)
-                    valor = obtener_nombre_estado(cilindro, True)  # Sin paréntesis
+                    valor = obtener_nombre_estado(cilindro, True) 
                 else:  # Contraído (SH)
-                    valor = obtener_nombre_estado(cilindro, False)  # Sin paréntesis
+                    valor = obtener_nombre_estado(cilindro, False)
                 
                 fila_cilindro['valores'].append({
                     'valor': valor,
@@ -55,9 +55,9 @@ class GeneradorTabla:
                 for c, accion in fase_obj.movimientos:
                     if c == cilindro:
                         if accion == '+':
-                            valvulas_texto.append(f"YW{c}")  # Sin paréntesis
+                            valvulas_texto.append(f"YW{c}")
                         else:
-                            valvulas_texto.append(f"YH{c}")  # Sin paréntesis
+                            valvulas_texto.append(f"YH{c}")
                         break
             
             # Unir múltiples válvulas con coma si hay más de una

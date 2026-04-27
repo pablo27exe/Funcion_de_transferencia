@@ -131,7 +131,7 @@ class AplicacionNeumatica:
             ft.Container(
                 content=contenedor_tabla_scroll,
                 height=400,
-                border=ft.Border.all(1, "#cccccc"),  # Cambiado ft.border.all → ft.Border.all
+                border=ft.Border.all(1, "#cccccc"), 
                 border_radius=5
             )
         ], scroll=ft.ScrollMode.AUTO, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
@@ -254,6 +254,9 @@ class AplicacionNeumatica:
             self._actualizar_tabla()
             print("Tabla actualizada")
             
+            self.btn_exportar_pdf.disabled = False
+            self.btn_exportar_png.disabled = False
+            
             print("Haciendo visible...")
             self.imagen_grafico.visible = True
             self.tabla_estados.visible = True
@@ -268,7 +271,7 @@ class AplicacionNeumatica:
             self.page.update()
             print("Página actualizada")
             
-            self._mostrar_alerta("Éxito", "Diagrama generado correctamente", ft.Icons.CHECK_CIRCLE, "green")
+            #self._mostrar_alerta("Éxito", "Diagrama generado correctamente", ft.Icons.CHECK_CIRCLE, "green")
             
         except Exception as ex:
             print(f"ERROR: {ex}")
@@ -386,101 +389,140 @@ class AplicacionNeumatica:
         self._actualizar_paso_a_paso()
     
     def _exportar_pdf(self):
-        """Exporta el diagrama a PDF"""
+        """Exporta el diagrama a PDF directamente en Descargas"""
+        import os
+        from pathlib import Path
+        
         if not self.interprete:
+            self._mostrar_alerta("Error", "Primero genera un diagrama", ft.Icons.ERROR)
+            return
+        
+        # Verificar que el gráfico existe
+        if not self.ruta_grafico_temp or not os.path.exists(self.ruta_grafico_temp):
+            self._mostrar_alerta("Error", "No hay gráfico generado", ft.Icons.ERROR)
             return
         
         try:
-            def guardar_pdf(e: ft.FilePickerResultEvent):
-                if e.path:
-                    ruta_pdf = e.path
-                    if not ruta_pdf.endswith('.pdf'):
-                        ruta_pdf += '.pdf'
-                    
-                    datos_tabla = self.generador_tabla.generar_datos_tabla()
-                    Exportador.exportar_pdf(
-                        ruta_pdf,
-                        self.txt_funcion.value,
-                        self.ruta_grafico_temp,
-                        datos_tabla
-                    )
-                    
-                    self._mostrar_alerta(
-                        "Exportación Exitosa",
-                        f"PDF guardado en:\n{ruta_pdf}",
-                        ft.Icons.CHECK_CIRCLE,
-                        ft.colors.GREEN
-                    )
+            # Carpeta de Descargas
+            descargas = Path.home() / "Downloads" / "Descargas"
+            if not descargas.exists():
+                descargas = Path.home() / "Downloads"
+            if not descargas.exists():
+                descargas = Path.home() / "Descargas"
             
-            file_picker = ft.FilePicker(on_result=guardar_pdf)
-            self.page.overlay.append(file_picker)
-            self.page.update()
+            # Crear nombre de archivo con timestamp
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            ruta_pdf = descargas / f"diagrama_neumatico_{timestamp}.pdf"
             
-            file_picker.save_file(
-                dialog_title="Guardar PDF",
-                file_name="diagrama_neumatico.pdf",
-                allowed_extensions=["pdf"]
+            # Generar datos de tabla
+            datos_tabla = self.generador_tabla.generar_datos_tabla()
+            
+            # Exportar
+            Exportador.exportar_pdf(
+                str(ruta_pdf),
+                self.txt_funcion.value,
+                self.ruta_grafico_temp,
+                datos_tabla
+            )
+            
+            self._mostrar_alerta(
+                "Exportación Exitosa",
+                f"PDF guardado en:\n{ruta_pdf}",
+                ft.Icons.CHECK_CIRCLE,
+                "green"
             )
             
         except Exception as ex:
+            print(f"ERROR: {ex}")
+            import traceback
+            traceback.print_exc()
             self._mostrar_alerta("Error", f"Error al exportar PDF: {str(ex)}", ft.Icons.ERROR)
-    
+
+
     def _exportar_png(self):
-        """Exporta el gráfico a PNG"""
+        """Exporta el gráfico a PNG directamente en Descargas"""
+        import os
+        from pathlib import Path
+        
         if not self.generador_grafico:
+            self._mostrar_alerta("Error", "Primero genera un diagrama", ft.Icons.ERROR)
+            return
+        
+        if not self.ruta_grafico_temp or not os.path.exists(self.ruta_grafico_temp):
+            self._mostrar_alerta("Error", "No hay gráfico generado", ft.Icons.ERROR)
             return
         
         try:
-            def guardar_png(e: ft.FilePickerResultEvent):
-                if e.path:
-                    ruta_png = e.path
-                    if not ruta_png.endswith('.png'):
-                        ruta_png += '.png'
-                    
-                    self.generador_grafico.guardar_png(ruta_png)
-                    
-                    self._mostrar_alerta(
-                        "Exportación Exitosa",
-                        f"PNG guardado en:\n{ruta_png}",
-                        ft.Icons.CHECK_CIRCLE,
-                        ft.colors.GREEN
-                    )
+            # Carpeta de Descargas
+            descargas = Path.home() / "Downloads" / "Descargas"
+            if not descargas.exists():
+                descargas = Path.home() / "Downloads"
+            if not descargas.exists():
+                descargas = Path.home() / "Descargas"
             
-            file_picker = ft.FilePicker(on_result=guardar_png)
-            self.page.overlay.append(file_picker)
-            self.page.update()
+            # Crear nombre de archivo con timestamp
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            ruta_png = descargas / f"grafico_neumatico_{timestamp}.png"
             
-            file_picker.save_file(
-                dialog_title="Guardar PNG",
-                file_name="grafico_neumatico.png",
-                allowed_extensions=["png"]
+            # Copiar el gráfico temporal o generarlo directamente
+            import shutil
+            shutil.copy2(self.ruta_grafico_temp, ruta_png)
+            
+            self._mostrar_alerta(
+                "Exportación Exitosa",
+                f"PNG guardado en:\n{ruta_png}",
+                ft.Icons.CHECK_CIRCLE,
+                "green"
             )
             
         except Exception as ex:
+            print(f"ERROR: {ex}")
+            import traceback
+            traceback.print_exc()
             self._mostrar_alerta("Error", f"Error al exportar PNG: {str(ex)}", ft.Icons.ERROR)
     
     def _mostrar_alerta(self, titulo: str, mensaje: str, icono=ft.Icons.INFO, color=None):
         """Muestra un diálogo de alerta"""
-        def cerrar_dialogo(e):
-            dialogo.open = False
-            self.page.update()
         
+        color_icono = color if color else "blue"
+        
+        # Variable para guardar la referencia al diálogo
         dialogo = ft.AlertDialog(
             modal=True,
             title=ft.Row([
-                ft.Icon(icono, color=color) if icono else ft.Container(),
-                ft.Text(titulo)
+                ft.Icon(icono, color=color_icono),
+                ft.Text(titulo, weight=ft.FontWeight.BOLD),
             ]),
             content=ft.Text(mensaje),
             actions=[
-                ft.TextButton("Aceptar", on_click=cerrar_dialogo)
-            ]
+                ft.TextButton("Aceptar", on_click=lambda e: _cerrar())
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+            on_dismiss=lambda e: _cerrar(),  # También cerrar si se clic fuera
         )
         
-        self.page.dialog = dialogo
+        def _cerrar():
+            dialogo.open = False
+            # Esperar un momento antes de remover
+            self.page.update()
+            # Remover del overlay después de un breve delay
+            import threading
+            threading.Timer(0.1, lambda: self._remover_dialogo(dialogo)).start()
+        
+        self.page.overlay.append(dialogo)
         dialogo.open = True
         self.page.update()
 
+    def _remover_dialogo(self, dialogo):
+        """Remueve el diálogo del overlay"""
+        try:
+            if dialogo in self.page.overlay:
+                self.page.overlay.remove(dialogo)
+                self.page.update()
+        except:
+            pass
 
 def main(page: ft.Page):
     app = AplicacionNeumatica(page)
