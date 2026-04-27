@@ -333,8 +333,7 @@ class AplicacionNeumatica:
             ]
             
             for celda_data in fila_data['valores']:
-                bgcolor = "#FFE4B5" if celda_data['activo'] and celda_data['valor'] else None
-                
+
                 celdas.append(
                     ft.DataCell(
                         ft.Container(
@@ -343,7 +342,7 @@ class AplicacionNeumatica:
                                 size=12,
                                 weight=ft.FontWeight.BOLD if celda_data['activo'] else ft.FontWeight.NORMAL
                             ),
-                            bgcolor=bgcolor,
+
                             padding=5,
                             alignment=ft.Alignment(0, 0)
                         )

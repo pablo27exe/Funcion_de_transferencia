@@ -30,9 +30,9 @@ class GeneradorTabla:
                 esta_activo = cilindro in self.activos.get(fase_num, [])
                 
                 if estado:  # Extendido (SW)
-                    valor = f"({obtener_nombre_estado(cilindro, True)})" if esta_activo else obtener_nombre_estado(cilindro, True)
+                    valor = obtener_nombre_estado(cilindro, True)  # Sin paréntesis
                 else:  # Contraído (SH)
-                    valor = f"({obtener_nombre_estado(cilindro, False)})" if esta_activo else obtener_nombre_estado(cilindro, False)
+                    valor = obtener_nombre_estado(cilindro, False)  # Sin paréntesis
                 
                 fila_cilindro['valores'].append({
                     'valor': valor,
@@ -55,9 +55,9 @@ class GeneradorTabla:
                 for c, accion in fase_obj.movimientos:
                     if c == cilindro:
                         if accion == '+':
-                            valvulas_texto.append(f"(YW{c})")
+                            valvulas_texto.append(f"YW{c}")  # Sin paréntesis
                         else:
-                            valvulas_texto.append(f"(YH{c})")
+                            valvulas_texto.append(f"YH{c}")  # Sin paréntesis
                         break
             
             # Unir múltiples válvulas con coma si hay más de una
