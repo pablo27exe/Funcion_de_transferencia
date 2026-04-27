@@ -28,7 +28,7 @@ class AplicacionNeumatica:
         self.interprete = None
         self.generador_grafico = None
         self.generador_tabla = None
-        self.fase_actual = 0  # Para modo paso a paso
+        self.fase_actual = 0
         self.ruta_grafico_temp = None
         
         # Componentes UI
@@ -59,9 +59,9 @@ class AplicacionNeumatica:
             on_submit=lambda e: self._generar_diagrama()
         )
         
-        self.btn_generar = ft.ElevatedButton(
-            text="Generar Diagrama",
-            icon=ft.icons.PLAY_ARROW,
+        self.btn_generar = ft.FilledButton(
+            "Generar Diagrama",
+            icon=ft.Icons.PLAY_ARROW,
             on_click=lambda e: self._generar_diagrama(),
             style=ft.ButtonStyle(
                 bgcolor={"": "#1f77b4", "hovered": "#1565c0"},
@@ -89,7 +89,7 @@ class AplicacionNeumatica:
                 )
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             padding=20,
-            border=ft.border.all(1, "#cccccc"),
+            border=ft.Border.all(1, "#cccccc"),  # Cambiado ft.border.all → ft.Border.all
             border_radius=10,
             bgcolor="#f9f9f9"
         )
@@ -98,22 +98,23 @@ class AplicacionNeumatica:
         self.imagen_grafico = ft.Image(
             width=900,
             height=400,
-            fit=ft.ImageFit.CONTAIN,
-            visible=False
+            fit="contain",  # Cambiado ft.ImageFit.CONTAIN por "contain"
+            visible=False,
+            src=""
         )
         
         self.tabla_estados = ft.DataTable(
-            columns=[],
+            columns=[ft.DataColumn(ft.Text(""))],  # Columna temporal para evitar error
             rows=[],
-            border=ft.border.all(1, "black"),
-            vertical_lines=ft.border.BorderSide(1, "black"),
-            horizontal_lines=ft.border.BorderSide(1, "black"),
+            border=ft.Border.all(1, "black"),
+            vertical_lines=ft.BorderSide(1, "black"),
+            horizontal_lines=ft.BorderSide(1, "black"),
             visible=False
         )
         
         contenedor_tabla_scroll = ft.Container(
             content=self.tabla_estados,
-            visible=False
+            visible=True
         )
         
         self.contenedor_resultado = ft.Column([
@@ -130,7 +131,7 @@ class AplicacionNeumatica:
             ft.Container(
                 content=contenedor_tabla_scroll,
                 height=400,
-                border=ft.border.all(1, "#cccccc"),
+                border=ft.Border.all(1, "#cccccc"),  # Cambiado ft.border.all → ft.Border.all
                 border_radius=5
             )
         ], scroll=ft.ScrollMode.AUTO, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
@@ -139,14 +140,14 @@ class AplicacionNeumatica:
         self.txt_fase_actual = ft.Text("Fase: 0", size=16, weight=ft.FontWeight.BOLD)
         
         self.btn_anterior = ft.IconButton(
-            icon=ft.icons.ARROW_BACK,
+            icon=ft.Icons.ARROW_BACK,
             tooltip="Fase anterior",
             on_click=lambda e: self._cambiar_fase(-1),
             disabled=True
         )
         
         self.btn_siguiente = ft.IconButton(
-            icon=ft.icons.ARROW_FORWARD,
+            icon=ft.Icons.ARROW_FORWARD,
             tooltip="Siguiente fase",
             on_click=lambda e: self._cambiar_fase(1),
             disabled=True
@@ -171,15 +172,15 @@ class AplicacionNeumatica:
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             visible=False,
             padding=15,
-            border=ft.border.all(1, "#1f77b4"),
+            border=ft.Border.all(1, "#1f77b4"),  # Cambiado ft.border.all → ft.Border.all
             border_radius=10,
             bgcolor="#e3f2fd"
         )
         
         # ========== SECCIÓN INFERIOR: EXPORTACIÓN ==========
-        self.btn_exportar_pdf = ft.ElevatedButton(
-            text="Exportar PDF",
-            icon=ft.icons.PICTURE_AS_PDF,
+        self.btn_exportar_pdf = ft.FilledButton(
+            "Exportar PDF",
+            icon=ft.Icons.PICTURE_AS_PDF,
             on_click=lambda e: self._exportar_pdf(),
             disabled=True,
             style=ft.ButtonStyle(
@@ -188,9 +189,9 @@ class AplicacionNeumatica:
             )
         )
         
-        self.btn_exportar_png = ft.ElevatedButton(
-            text="Exportar PNG",
-            icon=ft.icons.IMAGE,
+        self.btn_exportar_png = ft.FilledButton(
+            "Exportar PNG",
+            icon=ft.Icons.IMAGE,
             on_click=lambda e: self._exportar_png(),
             disabled=True,
             style=ft.ButtonStyle(
@@ -222,42 +223,33 @@ class AplicacionNeumatica:
         funcion = self.txt_funcion.value
         
         if not funcion:
-            self._mostrar_alerta("Error", "Debe ingresar una función", ft.icons.ERROR)
+            self._mostrar_alerta("Error", "Debe ingresar una función", ft.Icons.ERROR)
             return
         
-        # Validar función
         es_valida, mensaje = ValidadorFuncion.validar(funcion)
         
         if not es_valida:
-            self._mostrar_alerta("Error de Validación", mensaje, ft.icons.ERROR)
+            self._mostrar_alerta("Error de Validación", mensaje, ft.Icons.ERROR)
             return
         
         try:
-            # Interpretar función
             self.interprete = InterpreteFuncion(funcion)
             self.generador_grafico = GeneradorGrafico(self.interprete)
             self.generador_tabla = GeneradorTabla(self.interprete)
             
-            # Generar gráfico completo
             self._actualizar_grafico()
-            
-            # Generar tabla
             self._actualizar_tabla()
             
-            # Activar modo paso a paso
             self.fase_actual = 0
             self._actualizar_paso_a_paso()
             
-            # Activar botones de exportación
             self.btn_exportar_pdf.disabled = False
             self.btn_exportar_png.disabled = False
             
-            # Mostrar elementos
             self.imagen_grafico.visible = True
             self.tabla_estados.visible = True
             self.contenedor_paso_a_paso.visible = True
             
-            # Actualizar títulos
             for control in self.contenedor_resultado.controls:
                 if isinstance(control, ft.Text):
                     control.visible = True
@@ -267,16 +259,15 @@ class AplicacionNeumatica:
             self._mostrar_alerta(
                 "Éxito", 
                 f"Diagrama generado correctamente\n{len(self.interprete.cilindros)} cilindros, {len(self.interprete.fases)} fases", 
-                ft.icons.CHECK_CIRCLE,
+                ft.Icons.CHECK_CIRCLE,
                 ft.colors.GREEN
             )
             
         except Exception as ex:
-            self._mostrar_alerta("Error", f"Error al generar diagrama: {str(ex)}", ft.icons.ERROR)
+            self._mostrar_alerta("Error", f"Error al generar diagrama: {str(ex)}", ft.Icons.ERROR)
     
     def _actualizar_grafico(self, hasta_fase: int = None):
         """Actualiza la imagen del gráfico"""
-        # Crear archivo temporal para el gráfico
         if self.ruta_grafico_temp:
             try:
                 os.remove(self.ruta_grafico_temp)
@@ -286,10 +277,8 @@ class AplicacionNeumatica:
         temp_dir = tempfile.gettempdir()
         self.ruta_grafico_temp = os.path.join(temp_dir, "grafico_neumatico_temp.png")
         
-        # Generar y guardar gráfico
         self.generador_grafico.guardar_png(self.ruta_grafico_temp, hasta_fase)
         
-        # Actualizar imagen en UI
         self.imagen_grafico.src = self.ruta_grafico_temp
         self.page.update()
     
@@ -297,11 +286,9 @@ class AplicacionNeumatica:
         """Actualiza la tabla de estados"""
         datos = self.generador_tabla.generar_datos_tabla()
         
-        # Limpiar tabla
         self.tabla_estados.columns.clear()
         self.tabla_estados.rows.clear()
         
-        # Crear columnas
         for header in datos['headers']:
             self.tabla_estados.columns.append(
                 ft.DataColumn(
@@ -309,7 +296,6 @@ class AplicacionNeumatica:
                 )
             )
         
-        # Crear filas
         for fila_data in datos['filas']:
             celdas = [
                 ft.DataCell(
@@ -318,7 +304,6 @@ class AplicacionNeumatica:
             ]
             
             for celda_data in fila_data['valores']:
-                # Color de fondo si está activa
                 bgcolor = "#FFE4B5" if celda_data['activo'] and celda_data['valor'] else None
                 
                 celdas.append(
@@ -345,18 +330,14 @@ class AplicacionNeumatica:
         if not self.interprete:
             return
         
-        # Actualizar texto de fase
         self.txt_fase_actual.value = f"Fase: {self.fase_actual}"
         
-        # Actualizar descripción
         descripcion = self.interprete.obtener_descripcion_fase(self.fase_actual)
         self.txt_descripcion_fase.value = descripcion
         
-        # Actualizar estado de botones
         self.btn_anterior.disabled = (self.fase_actual == 0)
         self.btn_siguiente.disabled = (self.fase_actual == len(self.interprete.fases))
         
-        # Actualizar gráfico hasta la fase actual
         self._actualizar_grafico(hasta_fase=self.fase_actual if self.fase_actual > 0 else None)
         
         self.page.update()
@@ -368,7 +349,6 @@ class AplicacionNeumatica:
         
         nueva_fase = self.fase_actual + direccion
         
-        # Validar límites
         if nueva_fase < 0:
             nueva_fase = 0
         elif nueva_fase > len(self.interprete.fases):
@@ -383,14 +363,12 @@ class AplicacionNeumatica:
             return
         
         try:
-            # Diálogo para guardar archivo
             def guardar_pdf(e: ft.FilePickerResultEvent):
                 if e.path:
                     ruta_pdf = e.path
                     if not ruta_pdf.endswith('.pdf'):
                         ruta_pdf += '.pdf'
                     
-                    # Generar PDF
                     datos_tabla = self.generador_tabla.generar_datos_tabla()
                     Exportador.exportar_pdf(
                         ruta_pdf,
@@ -402,7 +380,7 @@ class AplicacionNeumatica:
                     self._mostrar_alerta(
                         "Exportación Exitosa",
                         f"PDF guardado en:\n{ruta_pdf}",
-                        ft.icons.CHECK_CIRCLE,
+                        ft.Icons.CHECK_CIRCLE,
                         ft.colors.GREEN
                     )
             
@@ -417,7 +395,7 @@ class AplicacionNeumatica:
             )
             
         except Exception as ex:
-            self._mostrar_alerta("Error", f"Error al exportar PDF: {str(ex)}", ft.icons.ERROR)
+            self._mostrar_alerta("Error", f"Error al exportar PDF: {str(ex)}", ft.Icons.ERROR)
     
     def _exportar_png(self):
         """Exporta el gráfico a PNG"""
@@ -425,20 +403,18 @@ class AplicacionNeumatica:
             return
         
         try:
-            # Diálogo para guardar archivo
             def guardar_png(e: ft.FilePickerResultEvent):
                 if e.path:
                     ruta_png = e.path
                     if not ruta_png.endswith('.png'):
                         ruta_png += '.png'
                     
-                    # Guardar PNG
                     self.generador_grafico.guardar_png(ruta_png)
                     
                     self._mostrar_alerta(
                         "Exportación Exitosa",
                         f"PNG guardado en:\n{ruta_png}",
-                        ft.icons.CHECK_CIRCLE,
+                        ft.Icons.CHECK_CIRCLE,
                         ft.colors.GREEN
                     )
             
@@ -453,9 +429,9 @@ class AplicacionNeumatica:
             )
             
         except Exception as ex:
-            self._mostrar_alerta("Error", f"Error al exportar PNG: {str(ex)}", ft.icons.ERROR)
+            self._mostrar_alerta("Error", f"Error al exportar PNG: {str(ex)}", ft.Icons.ERROR)
     
-    def _mostrar_alerta(self, titulo: str, mensaje: str, icono=ft.icons.INFO, color=None):
+    def _mostrar_alerta(self, titulo: str, mensaje: str, icono=ft.Icons.INFO, color=None):
         """Muestra un diálogo de alerta"""
         def cerrar_dialogo(e):
             dialogo.open = False
@@ -464,7 +440,7 @@ class AplicacionNeumatica:
         dialogo = ft.AlertDialog(
             modal=True,
             title=ft.Row([
-                ft.Icon(icono, color=color),
+                ft.Icon(icono, color=color) if icono else ft.Container(),
                 ft.Text(titulo)
             ]),
             content=ft.Text(mensaje),
@@ -483,4 +459,4 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.app(target=main) 
