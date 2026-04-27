@@ -229,21 +229,18 @@ class AplicacionNeumatica:
             self._mostrar_alerta("Error", "Debe ingresar una función", ft.Icons.ERROR)
             return
         
-        # Validar función
         print("Validando función...")
         es_valida, mensaje = ValidadorFuncion.validar(funcion)
         print(f"¿Válida?: {es_valida}, Mensaje: {mensaje}")
         
         if not es_valida:
-            print("Mostrando alerta de error")
             self._mostrar_alerta("Error de Validación", mensaje, ft.Icons.ERROR)
             return
         
         try:
             print("Interpretando función...")
             self.interprete = InterpreteFuncion(funcion)
-            print(f"Cilindros: {self.interprete.cilindros}")
-            print(f"Fases: {len(self.interprete.fases)}")
+            print(f"Cilindros: {self.interprete.cilindros}, Fases: {len(self.interprete.fases)}")
             
             print("Generando gráfico...")
             self.generador_grafico = GeneradorGrafico(self.interprete)
@@ -251,27 +248,27 @@ class AplicacionNeumatica:
             
             print("Actualizando gráfico...")
             self._actualizar_grafico()
+            print("Gráfico actualizado")
             
             print("Actualizando tabla...")
             self._actualizar_tabla()
+            print("Tabla actualizada")
             
-            print("Todo OK!")
-            print("Mostrando elementos visuales...")
-            
-            # Asegurar que los elementos son visibles
+            print("Haciendo visible...")
             self.imagen_grafico.visible = True
             self.tabla_estados.visible = True
             self.contenedor_paso_a_paso.visible = True
-
-            # Actualizar los contenedores padres
-            contenedor_tabla_scroll = self.contenedor_resultado.controls[3].content
-            if contenedor_tabla_scroll:
-                contenedor_tabla_scroll.visible = True
-
-            # Forzar actualización de la página
+            
+            for control in self.contenedor_resultado.controls:
+                if isinstance(control, ft.Text):
+                    control.visible = True
+                    print(f"Texto visible: {control.value if hasattr(control, 'value') else 'texto'}")
+            
+            print("Actualizando página...")
             self.page.update()
-
-            print("¡Diagrama visible!")
+            print("Página actualizada")
+            
+            self._mostrar_alerta("Éxito", "Diagrama generado correctamente", ft.Icons.CHECK_CIRCLE, "green")
             
         except Exception as ex:
             print(f"ERROR: {ex}")
@@ -281,6 +278,9 @@ class AplicacionNeumatica:
     
     def _actualizar_grafico(self, hasta_fase: int = None):
         """Actualiza la imagen del gráfico"""
+        import time
+        import random
+        
         if self.ruta_grafico_temp:
             try:
                 os.remove(self.ruta_grafico_temp)
@@ -288,11 +288,27 @@ class AplicacionNeumatica:
                 pass
         
         temp_dir = tempfile.gettempdir()
-        self.ruta_grafico_temp = os.path.join(temp_dir, "grafico_neumatico_temp.png")
+        self.ruta_grafico_temp = os.path.join(temp_dir, f"grafico_neumatico_temp_{int(time.time())}_{random.randint(1000,9999)}.png")
         
+        print(f"  Generando gráfico en: {self.ruta_grafico_temp}")
         self.generador_grafico.guardar_png(self.ruta_grafico_temp, hasta_fase)
+        print(f"  Gráfico guardado, tamaño: {os.path.getsize(self.ruta_grafico_temp)} bytes")
         
-        self.imagen_grafico.src = self.ruta_grafico_temp
+        # Crear una nueva imagen en lugar de actualizar la existente
+        nueva_imagen = ft.Image(
+            src=self.ruta_grafico_temp,
+            width=900,
+            height=400,
+            fit="contain",
+            visible=True
+        )
+        
+        # Reemplazar la imagen en el contenedor
+        index = self.contenedor_resultado.controls.index(self.imagen_grafico)
+        self.contenedor_resultado.controls[index] = nueva_imagen
+        self.imagen_grafico = nueva_imagen
+        
+        # Forzar actualización
         self.page.update()
     
     def _actualizar_tabla(self):
